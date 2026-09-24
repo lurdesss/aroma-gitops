@@ -6,6 +6,13 @@ kind: Application
 metadata:
   name: kyverno
   namespace: argocd
+  # Recomendacion oficial de Kyverno para instalaciones via ArgoCD
+  # (kyverno.io/docs/installation/platform-notes): el ServerSideApply
+  # en syncOptions no basta por si solo en todas las versiones de
+  # ArgoCD para CRD de este tamaño -- hace falta ademas esta anotacion
+  # de comparacion.
+  annotations:
+    argocd.argoproj.io/compare-options: ServerSideDiff=true,IncludeMutationWebhook=true
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
