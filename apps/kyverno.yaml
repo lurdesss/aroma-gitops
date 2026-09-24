@@ -1,0 +1,25 @@
+# Instala Kyverno. Las 3 politicas obligatorias (sin "latest", limites
+# de CPU/memoria, sin root) van en policies/ -- una Application aparte,
+# porque necesitan que Kyverno ya este arriba antes de aplicarse.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kyverno
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://kyverno.github.io/kyverno
+    chart: kyverno
+    targetRevision: 3.3.6
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kyverno
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

@@ -1,0 +1,26 @@
+# Instala Velero. El destino de los respaldos (MinIO local, ver
+# P9/backups/) y el schedule programado se configuran en una capa
+# posterior, una vez que Velero mismo este arriba y MinIO este
+# accesible desde el cluster.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: velero
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://vmware-tanzu.github.io/helm-charts
+    chart: velero
+    targetRevision: 8.1.0
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: velero
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
