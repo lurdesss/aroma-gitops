@@ -22,10 +22,18 @@ spec:
         # ejemplo ":1.37"), pero esa etiqueta especifica ya no existe
         # en Docker Hub -- mismo problema de deprecacion de imagenes
         # publicas de Bitnami que ya se resolvio en la Practica 6.
-        # "latest" si sigue publicada bajo el mismo repositorio.
         kubectl:
           image:
             tag: latest
+        # El Job "velero-upgrade-crds" es un paso pensado para
+        # actualizar CRD ya existentes al subir de version de Velero.
+        # En una instalacion nueva (como esta) no hace falta: los
+        # mismos CRD ya llegan por el flujo normal de sincronizacion
+        # del chart (visibles directamente como recursos Sync/0 en el
+        # plan de ArgoCD). Se desactiva porque, ademas de ser
+        # redundante aqui, el contenedor "velero" del Job fallaba de
+        # forma intermitente al ejecutar el pipe interno hacia kubectl.
+        upgradeCRDs: false
   destination:
     server: https://kubernetes.default.svc
     namespace: velero
