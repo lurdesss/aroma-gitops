@@ -23,3 +23,8 @@ spec:
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
+      # Los CRD de Kyverno son demasiado grandes para el metodo de
+      # aplicacion por defecto (la anotacion "last-applied-configuration"
+      # supera el limite de 256 KB de etcd -- error real que aparecio al
+      # sincronizar). Server-Side Apply no tiene ese limite.
+      - ServerSideApply=true

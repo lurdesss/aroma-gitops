@@ -15,6 +15,17 @@ spec:
     repoURL: https://vmware-tanzu.github.io/helm-charts
     chart: velero
     targetRevision: 8.1.0
+    helm:
+      values: |
+        # El chart calcula automaticamente la version de la imagen
+        # "bitnami/kubectl" a partir de la version del cluster (por
+        # ejemplo ":1.37"), pero esa etiqueta especifica ya no existe
+        # en Docker Hub -- mismo problema de deprecacion de imagenes
+        # publicas de Bitnami que ya se resolvio en la Practica 6.
+        # "latest" si sigue publicada bajo el mismo repositorio.
+        kubectl:
+          image:
+            tag: latest
   destination:
     server: https://kubernetes.default.svc
     namespace: velero
