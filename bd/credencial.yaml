@@ -1,0 +1,20 @@
+# Credencial del usuario aroma de PostgreSQL (Cluster aroma-pg), SELLADA.
+# Generada por P9/scripts/sellar-credencial-bd.ps1. Solo texto cifrado:
+# la descifra el controlador de Sealed Secrets con la llave respaldada.
+---
+apiVersion: bitnami.com/v1alpha1
+kind: SealedSecret
+metadata:
+  name: aroma-pg-app
+  namespace: aroma-prod
+spec:
+  encryptedData:
+    password: AgAQrwzHuOMjlasOyreWSqHo7veuB+SqSw9TajlwJtaDlg8+M0S8KHfsmJv3xR4KtJObnVfY4NdsDojpeubq9U9aMQW3GwomYEW9FJFYe+kDAWR/MssO38cvR75CMO2naGu0h/dXqV0gJucgJtrt8CsqxQqWE53AaJ0UVsjL9gDRvHwcaDGTae+EejgMaad+K9p54OlEmj/P1iKzngoCBD/Hv2JLAiyKGObh4FkrKYX7Su/k3oCwpAOKe25UeMMMMfw8KufakpctP7S2nOkFnDFPg1pEpA4M8TGmCdhSxr+xKhrJO6kXmtBJrbjJzUHw0QyDsf+jyYjaRlIvozpLSYlYwEA5XW0i8/C31j4OYZTR805OtfCW82JRlcxgKqvmVOe6WhilkKTWQS3F09ibnc3+Bmd50Oo5p7pQo219XjGU9mMTCuttNueqVhENyxppb8fs3g1oFWqkJSX4VKkhYxmzelfPwb07R/lMMe+xn1knATwC+LWWJJtx7LF9ofQY7oYESB4q+aNdttSaCpDYb9Wauvc9+0WUYk1CO54eRd9iufIW/hhp8jm51cL3Vd/Gx2Nb2a54jdZrwWl0HRNJFp8CjJ8IhZnH5zFxSVLDvKZZMBbgAPa4g47H6s62XVcChr4z90YEgDAODr8mdEFTwqc95QPy0YK1Sor+JZrURJKX2K/sfirYZtWdRhj/IVdCOas6e3Cyzjt2qwLcbUxdK9Bu38C9jptUv3qLCE3MqiTcNQ==
+    username: AgCJozjGhY6No9PKMRgla5V7g2RPkA7B+ph722vXyJzy/q5o7A+3tlWIXbraTPrAHB6E7ZYFap0jRbbNI96z7dFmxbQYXrwsBhhbKw7zonFSw1z9OQMyEj8wYxocn1eYqgBbD758/XdAgslfcX3tT+FhUt4zQeoisTwMJzefjUbvYdJYTi1VdozfqkwD5CYu5ksLltmAT+5Km/AK9CtMId6SaVrSDHfvGTLZgg1Zp2hTFEJI1V8lpyrX3UTc7PLpktvCBUjSGc/UbErN31LNFRHx88hw6p8JxTzipREBahQ07uY7FjIbBQudnpwj14AAN18Itz5/a35zx0TjRx0bG+HYE6fEdLqxiNBxFUn6IMh4kut4VNC9jfPK+bvzH8WM4BXjkI9ZynzJ94rFtSGrGRdymDMG4X4FnBYO2/2iYvTAfaPAiO0thV0ExjjA/+hkqmof8Tq8XUTthv6ZDcMEVPNMW2OnDIx61XLNRYp+jiwwG/uLVegGQsOiKj4jXHLNiPnxp/feqPH3gpPqayK8i2fc/6BqJVCzUHUktUxYi5XeT2nIK5eZOAzIWRl66TZnPhAUQRzvR2IYr35rHm0Xsb3IMGqZlDmbYM5tEd7/VKvBLZ2jA7QOqdBvBdiGT4VVV4GWgVVZuHs9tfo/VTc9Pwk7a7KCz6asUWUacdZGHENs01H5lb3sKuGSIAu76hjBNZZn5+1vgA==
+  template:
+    metadata:
+      labels:
+        cnpg.io/reload: "true"
+      name: aroma-pg-app
+      namespace: aroma-prod
+    type: kubernetes.io/basic-auth

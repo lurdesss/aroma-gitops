@@ -1,0 +1,43 @@
+# Base de datos de produccion: Cluster de CloudNativePG + su credencial
+# sellada (carpeta bd/).
+#
+# Ola 2: despues del operador (ola 0). El namespace aroma-prod lo crea
+# Terraform (con cuota y LimitRange), por eso aqui no se usa
+# CreateNamespace.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: aroma-bd
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/lurdesss/aroma-gitops.git
+    targetRevision: main
+    path: bd
+    directory:
+      recurse: true
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: aroma-prod
+  syncPolicy:
+    automated:
+      # prune desactivado a proposito: borrar el Cluster desde Git
+      # borraria tambien los PVC con los datos. Retirar la base de datos
+      # debe ser una decision explicita, no un efecto de un commit.
+      prune: false
+      selfHeal: true
+    retry:
+      limit: 10
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 3m
+    syncOptions:
+      # El CRD Cluster lo registra el operador; en una reconstruccion
+      # puede no existir todavia en el primer intento.
+      - SkipDryRunOnMissingResource=true
