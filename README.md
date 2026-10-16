@@ -30,7 +30,7 @@ apps/
 charts/
 ├── aroma-comun/            -> libreria: seguridad, sondas, anti-afinidad, PDB
 └── <servicio>/             -> values.yaml + values-staging.yaml + values-prod.yaml
-bd/                         -> postgresql aroma-pg (StatefulSet de 2 instancias) + PDB
+bd/                         -> postgresql aroma-pg (StatefulSet de 2 instancias; el operador crea su PDB)
 backups/schedule.yaml       -> respaldo-diario-aroma y respaldo-llaves
 secrets/                    -> solo SealedSecret (nunca Secret en claro)
 ```

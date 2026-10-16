@@ -42,11 +42,17 @@ spec:
           enable_pod_antiaffinity: true
           pod_antiaffinity_preferred_during_scheduling: false
           pod_antiaffinity_topology_key: kubernetes.io/hostname
-          # El PDB del operador solo protege a la primaria (minAvailable 1
-          # sobre 1 pod) y bloquea cualquier drenaje de su nodo. Se usa el
-          # PDB propio de bd/pdb.yaml, que cubre las 2 instancias y permite
-          # desalojar una a la vez (Patroni promueve a la otra).
-          enable_pod_disruption_budget: false
+          # PDB del operador (postgres-aroma-pg-pdb) con minAvailable 1 sobre
+          # LAS 2 instancias (no solo la primaria): un drenaje puede desalojar
+          # una a la vez y, si era la primaria, Patroni promueve a la otra.
+          # Con el selector por defecto (solo primaria) el PDB bloquearia
+          # para siempre el drenaje del nodo de la primaria.
+          # Es el UNICO PDB de PostgreSQL: el operador lo crea aunque se
+          # desactive (con minAvailable 0), y un pod cubierto por dos PDB no
+          # se puede desalojar (la API de eviction lo rechaza; aviso
+          # MultiplePodDisruptionBudgets observado con un PDB propio).
+          enable_pod_disruption_budget: true
+          pdb_master_label_selector: false
           # Sonda de disponibilidad en los pods de PostgreSQL.
           enable_readiness_probe: true
           # Spilo sin root (uid/gid del usuario postgres de la imagen).
