@@ -16,6 +16,12 @@ metadata:
   namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "0"
+    # Con ServerSideApply, ArgoCD 2.13 calcula el diff con un esquema de
+    # Kubernetes antiguo que no conoce .status.terminatingReplicas de los
+    # Deployment (Kubernetes 1.33+; el cluster es 1.37) y la Application
+    # queda en sync "Unknown" (ComparisonError, error real observado).
+    # Con ServerSideDiff el diff lo calcula el propio API server.
+    argocd.argoproj.io/compare-options: ServerSideDiff=true
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
