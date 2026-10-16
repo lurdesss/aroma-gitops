@@ -1,0 +1,37 @@
+# Valores base de pedidos. Cada ambiente sobrescribe solo lo que cambia
+# (values-staging.yaml, values-prod.yaml).
+nombre: pedidos
+ambiente: base
+
+imagen:
+  repositorio: ghcr.io/lurdesss/pr-cticas-sa-b-202103763/pedidos-service
+  # Tag de version publicado por el pipeline del tag git v1.0.0 (nunca latest).
+  tag: v1.0.0
+
+puerto: 4003
+replicas: 2
+
+pdb:
+  minDisponibles: 1
+
+recursos:
+  requests: { cpu: 50m, memory: 96Mi }
+  limits:   { cpu: 300m, memory: 256Mi }
+
+# Variables de entorno adicionales (texto plano, nunca secretos).
+entorno:
+  NIVEL_LOG: info
+  # pedidos consulta el precio y la disponibilidad al catalogo.
+  CATALOGO_URL: http://catalogo:4001
+  # Sin RabbitMQ en P9: al crear un pedido, el servicio intenta publicar el
+  # evento, registra el fallo y responde igual (el pedido ya quedo en BD).
+
+baseDeDatos:
+  habilitada: true
+  # Secret sellado del Cluster aroma-pg (aroma-gitops/bd/credencial.yaml).
+  secreto: aroma-pg-app
+  # Service de la instancia primaria (lectura/escritura) de CloudNativePG.
+  host: aroma-pg-rw
+  nombre: pedidos_db
+  # Node.js, REST: driver pg de Node.js
+  esquema: postgres

@@ -1,0 +1,14 @@
+# Chart del gateway (Node.js). Es el unico servicio con entrega
+# progresiva: se despliega como Rollout canary de Argo Rollouts, con un
+# AnalysisTemplate que decide en cada paso si la version nueva avanza o
+# se aborta. Codigo fuente: P5/services/gateway del repositorio de codigo.
+apiVersion: v2
+name: gateway
+description: API gateway del sistema Aroma, desplegado con canary.
+type: application
+version: 1.0.0
+appVersion: "v1.0.0"
+dependencies:
+  - name: aroma-comun
+    version: 1.0.0
+    repository: file://../aroma-comun

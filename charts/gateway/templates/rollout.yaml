@@ -1,0 +1,38 @@
+# Rollout canary (Argo Rollouts) en lugar de Deployment.
+# Sin malla de servicio, el peso se aplica por numero de replicas, y
+# "canaryService" recibe solo los pods de la version nueva: es a donde
+# apunta el AnalysisTemplate para medir SOLO la version nueva.
+#
+# Pasos (3 escalones con analisis entre ellos):
+#   33 % -> pausa -> analisis -> 66 % -> pausa -> analisis -> 100 %
+# Si un analisis falla, Argo Rollouts aborta y vuelve a la version estable.
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: {{ include "aroma-comun.nombre" . }}
+  labels: {{- include "aroma-comun.etiquetas" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicas }}
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels: {{- include "aroma-comun.selector" . | nindent 6 }}
+  template: {{- include "aroma-comun.plantillaPod" . | nindent 4 }}
+  strategy:
+    canary:
+      stableService: {{ include "aroma-comun.nombre" . }}
+      canaryService: {{ include "aroma-comun.nombre" . }}-canary
+      # Nunca bajar de las replicas declaradas mientras avanza el canary.
+      maxUnavailable: 0
+      maxSurge: 1
+      steps:
+        - setWeight: 33
+        - pause: { duration: {{ .Values.canary.pausa }} }
+        - analysis:
+            templates:
+              - templateName: {{ include "aroma-comun.nombre" . }}-salud-canary
+        - setWeight: 66
+        - pause: { duration: {{ .Values.canary.pausa }} }
+        - analysis:
+            templates:
+              - templateName: {{ include "aroma-comun.nombre" . }}-salud-canary
+        - setWeight: 100

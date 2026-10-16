@@ -50,7 +50,8 @@ spec:
         # El Job "velero-upgrade-crds" solo sirve al subir de version; en
         # una instalacion nueva los CRD llegan por la sincronizacion normal
         # del chart. Al desactivarlo ya no se usa la imagen bitnami/kubectl,
-        # por eso se elimino el override "tag: latest" (prohibido por Kyverno).
+        # por eso se elimino el override que fijaba su tag flotante
+        # (prohibido por Kyverno y no versionable).
         upgradeCRDs: false
   destination:
     server: https://kubernetes.default.svc

@@ -1,0 +1,17 @@
+# Staging (namespace aroma-staging). En P9 no se despliega: el clúster
+# local no tiene memoria para un segundo PostgreSQL y el alcance de DR es
+# producción. Se mantiene para que el chart siga siendo multiambiente y se
+# valida con "helm template -f values-staging.yaml".
+ambiente: staging
+
+replicas: 1
+# Con 1 replica, un PDB de minimo 1 bloquearia cualquier drenaje.
+pdb:
+  minDisponibles: 0
+
+recursos:
+  requests: { cpu: 25m, memory: 64Mi }
+  limits:   { cpu: 200m, memory: 96Mi }
+
+entorno:
+  NIVEL_LOG: debug

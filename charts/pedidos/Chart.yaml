@@ -1,0 +1,13 @@
+# Chart del microservicio pedidos (Node.js, REST). Codigo fuente: P5/services/pedidos-service
+# del repositorio de codigo; imagen publicada por su pipeline en GHCR.
+apiVersion: v2
+name: pedidos
+description: Microservicio pedidos del sistema Aroma.
+type: application
+version: 1.0.0
+appVersion: "v1.0.0"
+dependencies:
+  # Plantillas compartidas (seguridad, sondas, anti-afinidad, PDB).
+  - name: aroma-comun
+    version: 1.0.0
+    repository: file://../aroma-comun

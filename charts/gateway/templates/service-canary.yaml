@@ -1,0 +1,16 @@
+# Service del canary: Argo Rollouts le agrega el selector del
+# pod-template-hash de la version nueva, asi que solo enruta a ella.
+# El Service estable (service.yaml) recibe el mismo tratamiento con la
+# version estable.
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "aroma-comun.nombre" . }}-canary
+  labels: {{- include "aroma-comun.etiquetas" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  selector: {{- include "aroma-comun.selector" . | nindent 4 }}
+  ports:
+    - name: http
+      port: {{ .Values.puerto }}
+      targetPort: http

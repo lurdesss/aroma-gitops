@@ -1,0 +1,33 @@
+# Valores base de resenas. Cada ambiente sobrescribe solo lo que cambia
+# (values-staging.yaml, values-prod.yaml).
+nombre: resenas
+ambiente: base
+
+imagen:
+  repositorio: ghcr.io/lurdesss/pr-cticas-sa-b-202103763/resenas-service
+  # Tag de version publicado por el pipeline del tag git v1.0.0 (nunca latest).
+  tag: v1.0.0
+
+puerto: 4004
+replicas: 2
+
+pdb:
+  minDisponibles: 1
+
+recursos:
+  requests: { cpu: 50m, memory: 128Mi }
+  limits:   { cpu: 300m, memory: 384Mi }
+
+# Variables de entorno adicionales (texto plano, nunca secretos).
+entorno:
+  NIVEL_LOG: info
+
+baseDeDatos:
+  habilitada: true
+  # Secret sellado del Cluster aroma-pg (aroma-gitops/bd/credencial.yaml).
+  secreto: aroma-pg-app
+  # Service de la instancia primaria (lectura/escritura) de CloudNativePG.
+  host: aroma-pg-rw
+  nombre: resenas_db
+  # Python, FastAPI REST: SQLAlchemy con psycopg 3
+  esquema: postgresql+psycopg

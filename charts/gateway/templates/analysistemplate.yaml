@@ -1,0 +1,68 @@
+# Analisis del canary con el provider "job".
+#
+# Correccion respecto de la version anterior: el provider job NO evalua
+# stdout ni admite successCondition; decide SOLO por el codigo de salida
+# del Job (0 = exito, distinto de 0 = fallo). Ademas la imagen de curl no
+# trae "bc", asi que el calculo usa aritmetica entera de sh.
+#
+# El Job hace N peticiones a /api/salud del Service canary (solo pods de
+# la version nueva) y termina con exit 1 si la proporcion de respuestas
+# distintas de 200 supera el umbral.
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: {{ include "aroma-comun.nombre" . }}-salud-canary
+  labels: {{- include "aroma-comun.etiquetas" . | nindent 4 }}
+spec:
+  metrics:
+    - name: tasa-de-fallos-canary
+      # Un fallo del Job basta para abortar el Rollout.
+      failureLimit: 0
+      provider:
+        job:
+          spec:
+            backoffLimit: 0
+            activeDeadlineSeconds: 120
+            template:
+              spec:
+                restartPolicy: Never
+                automountServiceAccountToken: false
+                securityContext:
+                  runAsNonRoot: true
+                  runAsUser: 100
+                  runAsGroup: 101
+                  seccompProfile: { type: RuntimeDefault }
+                containers:
+                  - name: sonda
+                    image: {{ .Values.canary.analisis.imagen }}
+                    securityContext:
+                      allowPrivilegeEscalation: false
+                      readOnlyRootFilesystem: true
+                      capabilities: { drop: ["ALL"] }
+                    resources:
+                      requests: { cpu: 10m, memory: 16Mi }
+                      limits:   { cpu: 100m, memory: 64Mi }
+                    env:
+                      - name: URL
+                        value: "http://{{ include "aroma-comun.nombre" . }}-canary:{{ .Values.puerto }}/api/salud"
+                      - name: TOTAL
+                        value: {{ .Values.canary.analisis.peticiones | quote }}
+                      - name: MAX_PCT
+                        value: {{ .Values.canary.analisis.porcentajeMaximoFallos | quote }}
+                    command: ["/bin/sh", "-c"]
+                    args:
+                      - |
+                        fallos=0; i=0
+                        while [ "$i" -lt "$TOTAL" ]; do
+                          codigo=$(curl -s -o /dev/null -w '%{http_code}' --max-time 3 "$URL" || true)
+                          [ "$codigo" = "200" ] || fallos=$((fallos + 1))
+                          i=$((i + 1))
+                          sleep 1
+                        done
+                        echo "canary: $fallos fallos de $TOTAL peticiones (maximo permitido $MAX_PCT %)"
+                        # fallos/TOTAL > MAX_PCT/100  <=>  fallos*100 > TOTAL*MAX_PCT
+                        if [ $((fallos * 100)) -gt $((TOTAL * MAX_PCT)) ]; then
+                          echo "RESULTADO: fallo -> se aborta el canary"
+                          exit 1
+                        fi
+                        echo "RESULTADO: exito -> el canary puede avanzar"

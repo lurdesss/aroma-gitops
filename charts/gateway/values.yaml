@@ -1,0 +1,53 @@
+# Valores base del gateway. Cada ambiente sobrescribe solo lo que cambia.
+nombre: gateway
+ambiente: base
+
+imagen:
+  repositorio: ghcr.io/lurdesss/pr-cticas-sa-b-202103763/gateway
+  # Tag de version publicado por el pipeline del tag git v1.0.0 (nunca latest).
+  tag: v1.0.0
+
+puerto: 8000
+# 3 replicas: con canary sin malla de servicio, el peso se aproxima con
+# replicas (1 de 3 = 33 %, 2 de 3 = 66 %).
+replicas: 3
+
+pdb:
+  # Con 3 replicas, como maximo 1 puede estar fuera durante un drenaje.
+  minDisponibles: 2
+
+recursos:
+  requests: { cpu: 50m, memory: 64Mi }
+  limits:   { cpu: 300m, memory: 192Mi }
+
+# URLs internas de los microservicios (nombres fijos de sus Services).
+entorno:
+  NIVEL_LOG: info
+  CATALOGO_SERVICE_URL: http://catalogo:4001
+  INVENTARIO_SERVICE_URL: http://inventario:4002
+  PEDIDOS_SERVICE_URL: http://pedidos:4003
+  RESENAS_SERVICE_URL: http://resenas:4004
+  # Sin RabbitMQ en P9: la auditoria asincrona falla en silencio y el
+  # proxy sigue (P5/services/gateway/src/broker.js lo trata como
+  # complementario).
+
+# El gateway no tiene base de datos propia.
+baseDeDatos:
+  habilitada: false
+
+canary:
+  # Pausa entre pasos: deja que el trafico real toque la version nueva
+  # antes de analizarla.
+  pausa: 30s
+  analisis:
+    # Imagen con tag fijo; corre como uid 100 (curl_user), no root.
+    imagen: curlimages/curl:8.11.1
+    # Umbrales (justificados en P9/README.md):
+    # - 20 peticiones a /api/salud del canary, 1 por segundo (20 s): una
+    #   muestra corta pero suficiente para detectar una version que no
+    #   arranca o que no alcanza a sus dependencias.
+    # - Se aborta si falla mas del 5 % (mas de 1 de 20). /api/salud solo
+    #   responde 200 si el gateway llega a los 4 microservicios, asi que
+    #   un fallo aislado puede ser ruido, pero dos ya indican un problema.
+    peticiones: 20
+    porcentajeMaximoFallos: 5

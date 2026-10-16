@@ -1,0 +1,34 @@
+# Microservicio resenas en produccion: chart charts/resenas con values-prod.yaml.
+# Ola 3: despues de la base de datos (ola 2) para que el servicio no
+# arranque contra un PostgreSQL inexistente (igual reintenta si ocurre).
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: resenas
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/lurdesss/aroma-gitops.git
+    targetRevision: main
+    path: charts/resenas
+    helm:
+      valueFiles:
+        - values-prod.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: aroma-prod
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    retry:
+      limit: 10
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 3m

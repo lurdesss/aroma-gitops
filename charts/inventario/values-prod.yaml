@@ -1,0 +1,12 @@
+# Produccion (namespace aroma-prod): es el ambiente que se respalda,
+# reconstruye y restaura en P9.
+ambiente: prod
+
+# 2 replicas como minimo: con anti-afinidad quedan una en cada worker y
+# el PDB (minDisponibles 1) mantiene una en servicio durante un drenaje.
+replicas: 2
+pdb:
+  minDisponibles: 1
+
+entorno:
+  NIVEL_LOG: warn

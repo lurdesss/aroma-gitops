@@ -1,0 +1,9 @@
+# Produccion (namespace aroma-prod).
+ambiente: prod
+
+replicas: 3
+pdb:
+  minDisponibles: 2
+
+entorno:
+  NIVEL_LOG: warn

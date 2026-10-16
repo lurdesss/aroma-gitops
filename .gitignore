@@ -1,0 +1,4 @@
+# Dependencias de Helm descargadas/empaquetadas localmente (helm dependency
+# build). ArgoCD las resuelve solo desde charts/aroma-comun.
+charts/*/charts/
+*.tgz

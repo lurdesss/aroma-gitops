@@ -1,0 +1,18 @@
+# Staging (namespace aroma-staging). En P9 no se despliega (sin memoria
+# para un segundo PostgreSQL; el alcance de DR es produccion). Se valida
+# con "helm template -f values-staging.yaml".
+ambiente: staging
+
+replicas: 1
+pdb:
+  minDisponibles: 0
+
+recursos:
+  requests: { cpu: 25m, memory: 48Mi }
+  limits:   { cpu: 200m, memory: 128Mi }
+
+entorno:
+  NIVEL_LOG: debug
+
+canary:
+  pausa: 10s

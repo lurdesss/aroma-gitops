@@ -1,0 +1,11 @@
+# Libreria de plantillas compartidas por los charts de los microservicios
+# (gateway, catalogo, inventario, pedidos, resenas). Un chart "library" no
+# instala nada por si mismo: solo define plantillas con nombre que cada
+# chart de servicio incluye. Asi la seguridad (runAsNonRoot, limites,
+# sistema de archivos de solo lectura) y la resiliencia (anti-afinidad,
+# PDB) se escriben una sola vez y ningun servicio se queda sin ellas.
+apiVersion: v2
+name: aroma-comun
+description: Plantillas comunes de los microservicios de Aroma.
+type: library
+version: 1.0.0
