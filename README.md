@@ -30,12 +30,13 @@ app-of-apps) en `P9/terraform/bootstrap.tf`. El mismo archivo activa el
 rastreo por anotación: Velero copia las etiquetas de un `Schedule` a los
 `Backup` que genera y, con rastreo por etiqueta, el `prune` los borraría.
 
-Una sola `Application` raíz (`aroma-root`, ver
-`P9/argocd/root-application.yaml` en el repositorio de código) apunta
+Una sola `Application` raíz (`aroma-root`, namespace `argocd`) apunta
 a la carpeta `apps/` de **este** repositorio. ArgoCD descubre ahí
-todos los `.yaml` como `Application` hijas y las sincroniza solo —
-esa raíz es el único paso manual de todo el bootstrap; todo lo demás
-lo hace ArgoCD.
+todos los `.yaml` como `Application` hijas y las sincroniza solo.
+La raíz la instala Terraform (`helm_release.aroma_root` en
+`P9/terraform/bootstrap.tf` del repositorio de código, chart
+`argocd-apps`), invocado desde el punto de entrada único
+`P9/bootstrap.ps1`: no hay pasos intermedios fuera de ese comando.
 
 ## Respaldo de Velero
 
