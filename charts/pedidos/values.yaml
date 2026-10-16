@@ -28,10 +28,15 @@ entorno:
 
 baseDeDatos:
   habilitada: true
-  # Secret sellado del Cluster aroma-pg (aroma-gitops/bd/credencial.yaml).
-  secreto: aroma-pg-app
-  # Service de la instancia primaria (lectura/escritura) de CloudNativePG.
-  host: aroma-pg-rw
+  # Secret que el operador de Zalando genera para el usuario "aroma"
+  # (contrasena aleatoria creada dentro del cluster, nunca en Git).
+  secreto: aroma.aroma-pg.credentials.postgresql.acid.zalan.do
+  # Service de la instancia primaria (lectura/escritura).
+  host: aroma-pg
   nombre: pedidos_db
   # Node.js, REST: driver pg de Node.js
   esquema: postgres
+  # Spilo solo acepta conexiones remotas cifradas (hostnossl ... reject).
+  # El certificado es autofirmado: "no-verify" cifra sin validar la CA
+  # (pg-connection-string). Limite reconocido: no hay verificacion de CA.
+  parametros: "?sslmode=no-verify"

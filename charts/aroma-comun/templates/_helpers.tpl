@@ -34,10 +34,11 @@ nunca termine en "latest" (Kyverno lo rechazaria y no es versionable).
 {{- end -}}
 
 {{/*
-Variables de conexion a PostgreSQL (Cluster aroma-pg de CloudNativePG).
-Usuario y contrasena salen del Secret sellado aroma-pg-app; la URL se
-arma con la expansion $(VAR) de Kubernetes, asi la contrasena nunca
-aparece en Git ni en un ConfigMap.
+Variables de conexion a PostgreSQL (recurso postgresql aroma-pg del
+operador de Zalando). Usuario y contrasena salen del Secret que el
+operador genera dentro del cluster; la URL se arma con la expansion
+$(VAR) de Kubernetes, asi la contrasena nunca aparece en Git ni en un
+ConfigMap. "parametros" agrega opciones de conexion (SSL).
 */}}
 {{- define "aroma-comun.envBaseDeDatos" -}}
 {{- if .Values.baseDeDatos.habilitada }}
@@ -48,7 +49,7 @@ aparece en Git ni en un ConfigMap.
   valueFrom:
     secretKeyRef: { name: {{ .Values.baseDeDatos.secreto }}, key: password }
 - name: DATABASE_URL
-  value: "{{ .Values.baseDeDatos.esquema }}://$(DB_USUARIO):$(DB_CLAVE)@{{ .Values.baseDeDatos.host }}:5432/{{ .Values.baseDeDatos.nombre }}"
+  value: "{{ .Values.baseDeDatos.esquema }}://$(DB_USUARIO):$(DB_CLAVE)@{{ .Values.baseDeDatos.host }}:5432/{{ .Values.baseDeDatos.nombre }}{{ .Values.baseDeDatos.parametros | default "" }}"
 {{- end }}
 {{- end -}}
 

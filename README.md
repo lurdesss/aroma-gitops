@@ -18,9 +18,9 @@ apps/
 ├── argo-rollouts.yaml      [ola  0] controlador de Argo Rollouts
 ├── kyverno.yaml            [ola  0] Kyverno (politicas de admision)
 ├── velero.yaml             [ola  0] Velero (respaldo/restauracion)
-├── cnpg-operator.yaml      [ola  0] operador CloudNativePG (PostgreSQL)
+├── postgres-operator.yaml  [ola  0] operador de PostgreSQL de Zalando (Patroni)
 ├── velero-schedules.yaml   [ola  1] Schedules de backups/
-├── aroma-bd.yaml           [ola  2] Cluster PostgreSQL de bd/ (aroma-prod)
+├── aroma-bd.yaml           [ola  2] PostgreSQL de bd/ (aroma-prod)
 └── servicios/              [ola  3] una Application por microservicio
     ├── gateway.yaml                 (Rollout canary + AnalysisTemplate)
     ├── catalogo.yaml
@@ -30,7 +30,7 @@ apps/
 charts/
 ├── aroma-comun/            -> libreria: seguridad, sondas, anti-afinidad, PDB
 └── <servicio>/             -> values.yaml + values-staging.yaml + values-prod.yaml
-bd/                         -> Cluster aroma-pg (2 instancias) + credencial sellada
+bd/                         -> postgresql aroma-pg (StatefulSet de 2 instancias) + PDB
 backups/schedule.yaml       -> respaldo-diario-aroma y respaldo-llaves
 secrets/                    -> solo SealedSecret (nunca Secret en claro)
 ```

@@ -24,10 +24,15 @@ entorno:
 
 baseDeDatos:
   habilitada: true
-  # Secret sellado del Cluster aroma-pg (aroma-gitops/bd/credencial.yaml).
-  secreto: aroma-pg-app
-  # Service de la instancia primaria (lectura/escritura) de CloudNativePG.
-  host: aroma-pg-rw
+  # Secret que el operador de Zalando genera para el usuario "aroma"
+  # (contrasena aleatoria creada dentro del cluster, nunca en Git).
+  secreto: aroma.aroma-pg.credentials.postgresql.acid.zalan.do
+  # Service de la instancia primaria (lectura/escritura).
+  host: aroma-pg
   nombre: resenas_db
   # Python, FastAPI REST: SQLAlchemy con psycopg 3
   esquema: postgresql+psycopg
+  # Spilo solo acepta conexiones remotas cifradas (hostnossl ... reject).
+  # libpq "require" cifra sin validar el certificado autofirmado.
+  # Limite reconocido: no hay verificacion de CA.
+  parametros: "?sslmode=require"

@@ -1,0 +1,74 @@
+# Operador de PostgreSQL de Zalando (Patroni + Spilo): crea un
+# StatefulSet de PostgreSQL con replicacion en streaming y failover
+# automatico a partir del recurso "postgresql" de bd/postgresql.yaml.
+#
+# Por que este operador:
+# - Base de datos en StatefulSet + PVC por StorageClass (enunciado 3.3 y 6)
+#   con 2 replicas, PDB, anti-afinidad y probes (enunciado 3.2, rubrica 2.5).
+# - Sus CRD (postgresqls, operatorconfigurations, postgresteams) no chocan
+#   con los de Velero. CloudNativePG define otro recurso llamado "backups"
+#   y "kubectl get backups" dejaba de mostrar los backups de Velero
+#   (problema real detectado con verificar_p9.sh; por eso se reemplazo).
+#
+# Ola 0: CRD registrado antes de la ola 2 (aroma-bd).
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: postgres-operator
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+    # ServerSideApply (abajo) + ArgoCD 2.13 calcula el diff con un esquema
+    # anterior a Kubernetes 1.33 y no conoce .status.terminatingReplicas
+    # de los Deployment (error real visto con el operador anterior). Con
+    # ServerSideDiff el diff lo calcula el API server.
+    argocd.argoproj.io/compare-options: ServerSideDiff=true
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://opensource.zalando.com/postgres-operator/charts/postgres-operator
+    chart: postgres-operator
+    targetRevision: 2.0.3
+    helm:
+      values: |
+        configGeneral:
+          # Imagen de PostgreSQL (Spilo) con tag fijo, publica en GHCR.
+          docker_image: ghcr.io/zalando/spilo-18:4.1-p2
+        configKubernetes:
+          # Una instancia por nodo, obligatorio: perder un nodo nunca se
+          # lleva primaria y replica a la vez.
+          enable_pod_antiaffinity: true
+          pod_antiaffinity_preferred_during_scheduling: false
+          pod_antiaffinity_topology_key: kubernetes.io/hostname
+          # El PDB del operador solo protege a la primaria (minAvailable 1
+          # sobre 1 pod) y bloquea cualquier drenaje de su nodo. Se usa el
+          # PDB propio de bd/pdb.yaml, que cubre las 2 instancias y permite
+          # desalojar una a la vez (Patroni promueve a la otra).
+          enable_pod_disruption_budget: false
+          # Sonda de disponibilidad en los pods de PostgreSQL.
+          enable_readiness_probe: true
+          # Spilo sin root (uid/gid del usuario postgres de la imagen).
+          spilo_runasuser: 101
+          spilo_runasgroup: 103
+          spilo_fsgroup: 103
+        resources:
+          requests: { cpu: 50m, memory: 100Mi }
+          limits:   { cpu: 500m, memory: 300Mi }
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: postgres-operator
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    retry:
+      limit: 10
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 3m
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

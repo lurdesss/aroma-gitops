@@ -1,5 +1,5 @@
-# Base de datos de produccion: Cluster de CloudNativePG + su credencial
-# sellada (carpeta bd/).
+# Base de datos de produccion: recurso "postgresql" del operador de
+# Zalando + su PodDisruptionBudget (carpeta bd/).
 #
 # Ola 2: despues del operador (ola 0). El namespace aroma-prod lo crea
 # Terraform (con cuota y LimitRange), por eso aqui no se usa
@@ -26,8 +26,8 @@ spec:
     namespace: aroma-prod
   syncPolicy:
     automated:
-      # prune desactivado a proposito: borrar el Cluster desde Git
-      # borraria tambien los PVC con los datos. Retirar la base de datos
+      # prune desactivado a proposito: borrar el recurso postgresql desde
+      # Git borraria tambien el StatefulSet y sus datos. Retirar la base de datos
       # debe ser una decision explicita, no un efecto de un commit.
       prune: false
       selfHeal: true
@@ -38,6 +38,6 @@ spec:
         factor: 2
         maxDuration: 3m
     syncOptions:
-      # El CRD Cluster lo registra el operador; en una reconstruccion
+      # El CRD postgresql lo registra el operador; en una reconstruccion
       # puede no existir todavia en el primer intento.
       - SkipDryRunOnMissingResource=true
