@@ -1,0 +1,35 @@
+# Respaldos diarios de las aplicaciones y PVC de ambos ambientes.
+apiVersion: velero.io/v1
+kind: Schedule
+metadata:
+  name: respaldo-diario-aroma
+  namespace: velero
+spec:
+  schedule: "0 3 * * *"
+  template:
+    ttl: 360h0m0s
+    includedNamespaces:
+      - aroma-prod
+      - aroma-staging
+    defaultVolumesToFsBackup: true
+    snapshotVolumes: false
+---
+# La llave privada de Sealed Secrets permite descifrar los secretos GitOps.
+# El respaldo queda sin cifrado de reposo en MinIO: MinIO debe protegerse y
+# el archivo exportado debe almacenarse cifrado fuera del cluster y de Git.
+apiVersion: velero.io/v1
+kind: Schedule
+metadata:
+  name: respaldo-llaves
+  namespace: velero
+spec:
+  schedule: "0 4 * * 0"
+  template:
+    ttl: 8760h0m0s
+    includedNamespaces:
+      - kube-system
+    labelSelector:
+      matchExpressions:
+        - key: sealedsecrets.bitnami.com/sealed-secrets-key
+          operator: Exists
+    snapshotVolumes: false

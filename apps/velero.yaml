@@ -1,12 +1,12 @@
-# Instala Velero. El destino de los respaldos (MinIO local, ver
-# P9/backups/) y el schedule programado se configuran en una capa
-# posterior, una vez que Velero mismo este arriba y MinIO este
-# accesible desde el cluster.
+# Instala Velero con almacenamiento compatible con S3 fuera del cluster.
+# Ola 0: requiere el Secret velero-minio-credentials (ola -1).
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
   name: velero
   namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
@@ -17,22 +17,40 @@ spec:
     targetRevision: 8.1.0
     helm:
       values: |
-        # El chart calcula automaticamente la version de la imagen
-        # "bitnami/kubectl" a partir de la version del cluster (por
-        # ejemplo ":1.37"), pero esa etiqueta especifica ya no existe
-        # en Docker Hub -- mismo problema de deprecacion de imagenes
-        # publicas de Bitnami que ya se resolvio en la Practica 6.
-        kubectl:
-          image:
-            tag: latest
-        # El Job "velero-upgrade-crds" es un paso pensado para
-        # actualizar CRD ya existentes al subir de version de Velero.
-        # En una instalacion nueva (como esta) no hace falta: los
-        # mismos CRD ya llegan por el flujo normal de sincronizacion
-        # del chart (visibles directamente como recursos Sync/0 en el
-        # plan de ArgoCD). Se desactiva porque, ademas de ser
-        # redundante aqui, el contenedor "velero" del Job fallaba de
-        # forma intermitente al ejecutar el pipe interno hacia kubectl.
+        initContainers:
+          - name: velero-plugin-for-aws
+            image: velero/velero-plugin-for-aws:v1.11.0
+            imagePullPolicy: IfNotPresent
+            volumeMounts:
+              - mountPath: /target
+                name: plugins
+        credentials:
+          useSecret: true
+          existingSecret: velero-minio-credentials
+        configuration:
+          backupStorageLocation:
+            - name: default
+              provider: aws
+              bucket: velero-backups
+              default: true
+              credential:
+                name: velero-minio-credentials
+                key: cloud
+              config:
+                region: us-east-1
+                s3ForcePathStyle: "true"
+                s3Url: http://minio:9000
+          volumeSnapshotLocation: []
+          uploaderType: kopia
+          defaultVolumesToFsBackup: true
+        snapshotsEnabled: false
+        deployNodeAgent: true
+        nodeAgent:
+          podVolumePath: /var/lib/kubelet/pods
+        # El Job "velero-upgrade-crds" solo sirve al subir de version; en
+        # una instalacion nueva los CRD llegan por la sincronizacion normal
+        # del chart. Al desactivarlo ya no se usa la imagen bitnami/kubectl,
+        # por eso se elimino el override "tag: latest" (prohibido por Kyverno).
         upgradeCRDs: false
   destination:
     server: https://kubernetes.default.svc
@@ -41,5 +59,14 @@ spec:
     automated:
       prune: true
       selfHeal: true
+    # Reintento con espera creciente: en una reconstruccion desde cero
+    # el primer intento puede fallar si el CRD o el namespace aun no
+    # existen; sin "retry" ArgoCD no reintenta el mismo commit.
+    retry:
+      limit: 10
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 3m
     syncOptions:
       - CreateNamespace=true

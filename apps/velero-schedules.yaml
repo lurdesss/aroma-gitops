@@ -1,0 +1,41 @@
+# Los schedules se separan de la instalacion del chart y se sincronizan
+# despues de que los CRD de Velero hayan sido registrados (ola 1).
+# Requiere que ArgoCD rastree por anotacion (P9/terraform/bootstrap.tf):
+# Velero copia las etiquetas del Schedule a cada Backup y, con rastreo
+# por etiqueta, el prune de esta Application borraria los Backups.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: velero-schedules
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/lurdesss/aroma-gitops.git
+    targetRevision: main
+    path: backups
+    directory:
+      recurse: true
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: velero
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    # Reintento con espera creciente: en una reconstruccion desde cero
+    # el primer intento puede fallar si el CRD o el namespace aun no
+    # existen; sin "retry" ArgoCD no reintenta el mismo commit.
+    retry:
+      limit: 10
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 3m
+    syncOptions:
+      # Si el CRD Schedule aun no esta registrado, no fallar el dry-run.
+      - SkipDryRunOnMissingResource=true
