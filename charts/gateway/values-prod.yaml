@@ -1,6 +1,15 @@
 # Produccion (namespace aroma-prod).
 ambiente: prod
 
+# Version desplegada en produccion. Cambiar este tag (y solo este) es lo
+# que dispara la entrega progresiva: Argo Rollouts crea la version nueva
+# como canary (33 % -> 66 % -> 100 %) y la analiza entre pasos.
+# afd721271b2d: imagen publicada por el pipeline para el commit afd7212
+# (mismo codigo fuente del gateway que v1.0.0, otra construccion); se usa
+# para demostrar el canary completo en P9.
+imagen:
+  tag: afd721271b2d
+
 replicas: 3
 pdb:
   minDisponibles: 2
