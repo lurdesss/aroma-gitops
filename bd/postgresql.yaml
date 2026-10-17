@@ -3,9 +3,11 @@
 # El operador de Zalando crea a partir de este recurso:
 # - StatefulSet "aroma-pg" con 2 replicas (primaria + replica en
 #   streaming). Patroni promueve la replica si la primaria se pierde.
-# - Un PVC por instancia en la StorageClass "standard" (local-path):
-#   pgdata-aroma-pg-0 y pgdata-aroma-pg-1. Velero los respalda a nivel de
-#   archivo (Kopia).
+# - Un PVC por instancia en la StorageClass "aroma-local" (Terraform,
+#   P9/terraform/almacenamiento.tf): pgdata-aroma-pg-0 y pgdata-aroma-pg-1.
+#   Velero los respalda a nivel de archivo (Kopia). No se usa "standard":
+#   crea PV hostPath, que Velero omite sin error (backup "Completed" sin
+#   los datos; detectado en el Bloque 8a).
 # - Services: aroma-pg (siempre la primaria, lectura/escritura) y
 #   aroma-pg-repl (replicas, solo lectura).
 # - El Secret aroma.aroma-pg.credentials.postgresql.acid.zalan.do con el
@@ -25,7 +27,7 @@ spec:
     version: "17"
   volume:
     size: 1Gi
-    storageClass: standard
+    storageClass: aroma-local
   # Requests/limits explicitos: aroma-prod tiene ResourceQuota y Kyverno
   # exige limites de CPU y memoria.
   resources:
