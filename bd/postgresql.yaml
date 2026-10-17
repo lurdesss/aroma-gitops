@@ -31,6 +31,18 @@ spec:
   resources:
     requests: { cpu: 100m, memory: 256Mi }
     limits:   { cpu: 500m, memory: 512Mi }
+  # Hooks de Velero en los pods de PostgreSQL. Velero copia los archivos del
+  # volumen en caliente (Kopia) y esa copia puede no ser consistente si hay
+  # escrituras durante el respaldo. Antes de copiar, cada instancia escribe
+  # un volcado logico consistente (pg_dumpall) DENTRO del mismo volumen y
+  # fuerza un CHECKPOINT. Si los archivos restaurados no arrancan, el
+  # volcado permite recuperar el contenido. Si el hook falla, el respaldo
+  # queda PartiallyFailed (no se oculta el error).
+  podAnnotations:
+    pre.hook.backup.velero.io/container: postgres
+    pre.hook.backup.velero.io/command: '["/bin/bash", "-c", "mkdir -p /home/postgres/pgdata/respaldo-logico && pg_dumpall -U postgres -f /home/postgres/pgdata/respaldo-logico/dumpall.sql && psql -U postgres -c CHECKPOINT"]'
+    pre.hook.backup.velero.io/on-error: Fail
+    pre.hook.backup.velero.io/timeout: 120s
   users:
     aroma:
       - createdb

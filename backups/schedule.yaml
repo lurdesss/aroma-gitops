@@ -1,4 +1,26 @@
-# Respaldos diarios de las aplicaciones y PVC de ambos ambientes.
+# Respaldo cada hora de produccion (aroma-prod, con volumenes): es el que
+# sostiene el RPO declarado de 1 hora (P9/dr/OBJETIVOS-RTO-RPO.md). En el
+# peor caso se pierden los datos escritos desde el ultimo respaldo, es
+# decir, como maximo 1 hora. Retencion 48 h: suficiente para recuperar un
+# error descubierto al dia siguiente sin llenar MinIO (cada respaldo pesa
+# pocos MB). Velero interpreta el cron en UTC.
+apiVersion: velero.io/v1
+kind: Schedule
+metadata:
+  name: respaldo-horario-aroma
+  namespace: velero
+spec:
+  schedule: "0 * * * *"
+  template:
+    ttl: 48h0m0s
+    includedNamespaces:
+      - aroma-prod
+    defaultVolumesToFsBackup: true
+    snapshotVolumes: false
+---
+# Respaldos diarios de las aplicaciones y PVC de ambos ambientes
+# (retencion 15 dias, para recuperar mas atras de lo que cubre el horario).
+# 03:00 UTC = 21:00 en Guatemala (UTC-6).
 apiVersion: velero.io/v1
 kind: Schedule
 metadata:

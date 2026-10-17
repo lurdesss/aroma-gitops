@@ -53,6 +53,33 @@ spec:
         # por eso se elimino el override que fijaba su tag flotante
         # (prohibido por Kyverno y no versionable).
         upgradeCRDs: false
+        # Configuracion del init container "restore-wait" que Velero inyecta
+        # en cada pod restaurado con volumenes (restauracion a nivel de
+        # archivo). Sin esto, en aroma-prod:
+        # - Kyverno rechazaria el pod restaurado (contenedor sin limites).
+        # - El kubelet rechazaria runAsNonRoot: la imagen de Velero declara
+        #   un usuario por nombre ("cnb"), que no se puede verificar; por eso
+        #   se fija un uid numerico. La raiz del volumen local-path tiene
+        #   permisos 777, asi que ese uid puede borrar el marcador .velero.
+        configMaps:
+          fs-restore-action-config:
+            labels:
+              velero.io/plugin-config: ""
+              velero.io/pod-volume-restore: RestoreItemAction
+            data:
+              image: velero/velero:v1.15.0
+              cpuRequest: 50m
+              memRequest: 64Mi
+              cpuLimit: 200m
+              memLimit: 128Mi
+              secCtx: |
+                runAsNonRoot: true
+                runAsUser: 1000
+                runAsGroup: 1000
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: ["ALL"]
   destination:
     server: https://kubernetes.default.svc
     namespace: velero
