@@ -15,8 +15,15 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "0"
     argocd.argoproj.io/compare-options: ServerSideDiff=true,IncludeMutationWebhook=true
+  # Los dos post-delete-finalizer los agrega ArgoCD por si mismo porque el
+  # chart de Kyverno trae hooks post-delete. Si no se declaran aqui,
+  # aroma-root ve una diferencia permanente en esta Application (los
+  # finalizers vivos no coinciden con Git) y queda OutOfSync de forma
+  # intermitente (hallazgo real con kubectl diff, Bloque 8b).
   finalizers:
     - resources-finalizer.argocd.argoproj.io
+    - post-delete-finalizer.argocd.argoproj.io
+    - post-delete-finalizer.argocd.argoproj.io/cleanup
 spec:
   project: default
   source:
