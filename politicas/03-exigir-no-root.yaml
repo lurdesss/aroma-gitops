@@ -1,0 +1,67 @@
+# Politica 3: ningun contenedor puede ejecutarse como root.
+#
+# Se acepta cualquiera de dos formas de garantizarlo (anyPattern):
+#   a) runAsNonRoot: true a nivel de pod (o de cada contenedor) y ningun
+#      contenedor lo anula con false. Es lo que declaran los charts de los
+#      microservicios y el Job del analisis canary.
+#   b) runAsUser numerico mayor que 0 a nivel de pod y ningun contenedor
+#      lo anula con 0. Es lo que declara el operador de PostgreSQL de
+#      Zalando para Spilo (uid 101): no escribe el campo runAsNonRoot,
+#      pero el proceso tampoco corre como root.
+# Ambas impiden uid 0; rechazar (b) bloquearia la base de datos sin ganar
+# seguridad.
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: exigir-ejecucion-sin-root
+  annotations:
+    policies.kyverno.io/title: Exigir ejecucion sin root
+    policies.kyverno.io/category: Practica 8 / P9
+    policies.kyverno.io/severity: high
+spec:
+  background: true
+  rules:
+    - name: exigir-no-root
+      match:
+        any:
+          - resources:
+              kinds: [Pod]
+              namespaces: [aroma-prod, aroma-staging]
+      validate:
+        failureAction: Enforce
+        message: >-
+          El pod debe ejecutarse sin root: securityContext.runAsNonRoot=true,
+          o runAsUser mayor que 0, sin que ningun contenedor lo anule.
+        anyPattern:
+          # (a) runAsNonRoot a nivel de pod
+          - spec:
+              securityContext:
+                runAsNonRoot: true
+              =(initContainers):
+                - =(securityContext):
+                    =(runAsNonRoot): true
+                    =(runAsUser): ">0"
+              containers:
+                - =(securityContext):
+                    =(runAsNonRoot): true
+                    =(runAsUser): ">0"
+          # (a') runAsNonRoot en cada contenedor
+          - spec:
+              =(initContainers):
+                - securityContext:
+                    runAsNonRoot: true
+              containers:
+                - securityContext:
+                    runAsNonRoot: true
+          # (b) uid distinto de 0 a nivel de pod (Spilo)
+          - spec:
+              securityContext:
+                runAsUser: ">0"
+              =(initContainers):
+                - =(securityContext):
+                    =(runAsNonRoot): true
+                    =(runAsUser): ">0"
+              containers:
+                - =(securityContext):
+                    =(runAsNonRoot): true
+                    =(runAsUser): ">0"

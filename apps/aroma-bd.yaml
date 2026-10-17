@@ -1,5 +1,6 @@
 # Base de datos de produccion: recurso "postgresql" del operador de
-# Zalando + su PodDisruptionBudget (carpeta bd/).
+# Zalando (carpeta bd/). Su PodDisruptionBudget lo crea el operador
+# (ver apps/postgres-operator.yaml).
 #
 # Ola 2: despues del operador (ola 0). El namespace aroma-prod lo crea
 # Terraform (con cuota y LimitRange), por eso aqui no se usa

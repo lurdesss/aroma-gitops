@@ -1,6 +1,7 @@
 # Instala Kyverno. Las 3 politicas obligatorias (sin "latest", limites
-# de CPU/memoria, sin root) van en policies/ -- una Application aparte,
-# porque necesitan que Kyverno ya este arriba antes de aplicarse.
+# de CPU/memoria, sin root) van en politicas/ -- una Application aparte
+# (kyverno-politicas, ola 1), porque necesitan que Kyverno ya este arriba
+# antes de aplicarse.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -12,6 +13,7 @@ metadata:
   # ArgoCD para CRD de este tamaño -- hace falta ademas esta anotacion
   # de comparacion.
   annotations:
+    argocd.argoproj.io/sync-wave: "0"
     argocd.argoproj.io/compare-options: ServerSideDiff=true,IncludeMutationWebhook=true
   finalizers:
     - resources-finalizer.argocd.argoproj.io
@@ -21,6 +23,34 @@ spec:
     repoURL: https://kyverno.github.io/kyverno
     chart: kyverno
     targetRevision: 3.3.6
+    helm:
+      values: |
+        # El chart usa bitnami/kubectl:1.30.2 en sus Jobs de limpieza, una
+        # imagen que Bitnami retiro de Docker Hub. El hook post-sync
+        # "kyverno-clean-reports" quedaba en ImagePullBackOff (casi 5 h,
+        # error real) y la sincronizacion de esta Application nunca
+        # terminaba, dejando a aroma-root en OutOfSync intermitente. Mismo
+        # tag, publicado en el repositorio de archivo bitnamilegacy.
+        webhooksCleanup:
+          image:
+            registry: docker.io
+            repository: bitnamilegacy/kubectl
+            tag: "1.30.2"
+        policyReportsCleanup:
+          image:
+            registry: docker.io
+            repository: bitnamilegacy/kubectl
+            tag: "1.30.2"
+        # 2 replicas del admission controller (anti-afinidad del chart ya
+        # activa) y un PDB: con 1 sola replica, drenar su nodo deja sin
+        # respuesta al webhook y los pods nuevos de aroma-prod (los que
+        # reemplazan a los desalojados) no podrian admitirse hasta que
+        # Kyverno volviera.
+        admissionController:
+          replicas: 2
+          podDisruptionBudget:
+            enabled: true
+            minAvailable: 1
   destination:
     server: https://kubernetes.default.svc
     namespace: kyverno
@@ -28,6 +58,12 @@ spec:
     automated:
       prune: true
       selfHeal: true
+    retry:
+      limit: 10
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 3m
     syncOptions:
       - CreateNamespace=true
       # Los CRD de Kyverno son demasiado grandes para el metodo de

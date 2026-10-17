@@ -1,0 +1,39 @@
+# Las 3 politicas de admision de Kyverno (carpeta politicas/).
+# Ola 1: despues de Kyverno (ola 0, CRD ClusterPolicy registrado) y antes
+# de la base de datos (ola 2) y los microservicios (ola 3), para que en
+# una reconstruccion todo lo de aroma-prod se admita ya con las politicas
+# activas.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kyverno-politicas
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/lurdesss/aroma-gitops.git
+    targetRevision: main
+    path: politicas
+    directory:
+      recurse: true
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kyverno
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    retry:
+      limit: 10
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 3m
+    syncOptions:
+      # El CRD ClusterPolicy lo registra Kyverno; en una reconstruccion
+      # puede no existir todavia en el primer intento.
+      - SkipDryRunOnMissingResource=true

@@ -1,0 +1,50 @@
+# Politica 1: toda imagen debe llevar un tag explicito y no puede ser
+# "latest". Un tag flotante hace que una reconstruccion levante una
+# version distinta a la que se probo: el sistema no seria reproducible.
+#
+# Alcance: namespaces de la aplicacion (aroma-prod, aroma-staging). Los
+# componentes de plataforma usan sus charts oficiales con tags fijos.
+# Kyverno genera automaticamente reglas equivalentes para Deployment,
+# StatefulSet, Job, etc. (autogen), asi el rechazo ocurre al crear el
+# controlador y no solo al crear el pod.
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: prohibir-tag-latest
+  annotations:
+    policies.kyverno.io/title: Prohibir imagenes sin tag o con latest
+    policies.kyverno.io/category: Practica 8 / P9
+    policies.kyverno.io/severity: high
+spec:
+  background: true
+  rules:
+    - name: exigir-tag-explicito
+      match:
+        any:
+          - resources:
+              kinds: [Pod]
+              namespaces: [aroma-prod, aroma-staging]
+      validate:
+        failureAction: Enforce
+        message: "La imagen debe declarar un tag explicito (repositorio:tag)."
+        pattern:
+          spec:
+            =(initContainers):
+              - image: "*:*"
+            containers:
+              - image: "*:*"
+    - name: prohibir-latest
+      match:
+        any:
+          - resources:
+              kinds: [Pod]
+              namespaces: [aroma-prod, aroma-staging]
+      validate:
+        failureAction: Enforce
+        message: "El tag 'latest' esta prohibido: use un tag de version fijo."
+        pattern:
+          spec:
+            =(initContainers):
+              - image: "!*:latest"
+            containers:
+              - image: "!*:latest"

@@ -20,6 +20,7 @@ apps/
 ├── velero.yaml             [ola  0] Velero (respaldo/restauracion)
 ├── postgres-operator.yaml  [ola  0] operador de PostgreSQL de Zalando (Patroni)
 ├── velero-schedules.yaml   [ola  1] Schedules de backups/
+├── kyverno-politicas.yaml  [ola  1] 3 politicas de politicas/ (Enforce)
 ├── aroma-bd.yaml           [ola  2] PostgreSQL de bd/ (aroma-prod)
 └── servicios/              [ola  3] una Application por microservicio
     ├── gateway.yaml                 (Rollout canary + AnalysisTemplate)
@@ -31,6 +32,7 @@ charts/
 ├── aroma-comun/            -> libreria: seguridad, sondas, anti-afinidad, PDB
 └── <servicio>/             -> values.yaml + values-staging.yaml + values-prod.yaml
 bd/                         -> postgresql aroma-pg (StatefulSet de 2 instancias; el operador crea su PDB)
+politicas/                  -> sin latest, limites CPU/memoria, sin root (aroma-prod/staging)
 backups/schedule.yaml       -> respaldo-diario-aroma y respaldo-llaves
 secrets/                    -> solo SealedSecret (nunca Secret en claro)
 ```

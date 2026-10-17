@@ -1,0 +1,42 @@
+# Politica 2: todo contenedor debe declarar limites de CPU y memoria.
+# Sin limites, un contenedor con fuga de memoria puede agotar el nodo y
+# tumbar a los demas pods (incluida la base de datos).
+#
+# Nota: en aroma-prod el LimitRange de Terraform inyecta limites por
+# defecto en los pods ANTES de que Kyverno valide (LimitRanger es un
+# admission plugin integrado que corre primero). Por eso el control
+# efectivo de esta politica ocurre en las reglas autogeneradas para
+# Deployment/StatefulSet/Job, que no reciben esos valores por defecto:
+# un manifiesto sin limites se rechaza en Git -> ArgoCD -> admision.
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: exigir-limites-cpu-memoria
+  annotations:
+    policies.kyverno.io/title: Exigir limites de CPU y memoria
+    policies.kyverno.io/category: Practica 8 / P9
+    policies.kyverno.io/severity: medium
+spec:
+  background: true
+  rules:
+    - name: exigir-limites
+      match:
+        any:
+          - resources:
+              kinds: [Pod]
+              namespaces: [aroma-prod, aroma-staging]
+      validate:
+        failureAction: Enforce
+        message: "Todo contenedor debe declarar resources.limits.cpu y resources.limits.memory."
+        pattern:
+          spec:
+            =(initContainers):
+              - resources:
+                  limits:
+                    cpu: "?*"
+                    memory: "?*"
+            containers:
+              - resources:
+                  limits:
+                    cpu: "?*"
+                    memory: "?*"
