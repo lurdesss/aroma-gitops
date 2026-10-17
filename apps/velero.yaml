@@ -67,7 +67,11 @@ spec:
               velero.io/plugin-config: ""
               velero.io/pod-volume-restore: RestoreItemAction
             data:
-              image: velero/velero:v1.15.0
+              # Imagen propia del helper (trae /velero-restore-helper). La
+              # imagen del servidor (velero/velero) no lo incluye: con ella el
+              # init container fallo con "stat /velero-restore-helper: no such
+              # file or directory" en el ensayo de restauracion del Bloque 8b.
+              image: velero/velero-restore-helper:v1.15.0
               cpuRequest: 50m
               memRequest: 64Mi
               cpuLimit: 200m
